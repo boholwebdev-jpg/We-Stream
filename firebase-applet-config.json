@@ -1,8 +1,10 @@
 {
-  "apiKey": "PLACEHOLDER",
-  "authDomain": "PLACEHOLDER",
-  "projectId": "PLACEHOLDER",
-  "storageBucket": "PLACEHOLDER",
-  "messagingSenderId": "PLACEHOLDER",
-  "appId": "PLACEHOLDER"
+  "projectId": "ai-studio-applet-webapp-b6deb",
+  "appId": "1:347574601671:web:daa622b6946afede5d7be2",
+  "apiKey": "AIzaSyBx0dubyhdbKsRpBeovbQXnaewHsYDnjxM",
+  "authDomain": "ai-studio-applet-webapp-b6deb.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-8aadc449-5259-4adc-b471-c98cec74d6df",
+  "storageBucket": "ai-studio-applet-webapp-b6deb.firebasestorage.app",
+  "messagingSenderId": "347574601671",
+  "measurementId": ""
 }
