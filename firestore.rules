@@ -1,0 +1,128 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required, immutable)
+    //   - email: string (required, email format)
+    //   - displayName: string (optional)
+    //   - role: string (required, enum: ['user', 'admin'])
+    //
+    // Collection: streams
+    // Document ID: {streamId}
+    // Fields:
+    //   - userId: string (required, immutable)
+    //   - status: string (required, enum: ['live', 'ended'])
+    //   - title: string (optional, max 100 chars)
+    //   - platform: string (required, enum: ['facebook', 'youtube', 'custom'])
+    //
+    // Collection: streams/{streamId}/chat
+    // Document ID: {messageId}
+    // Fields:
+    //   - userId: string (required, immutable)
+    //   - message: string (required, max 500 chars)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "boholwebdev@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasRequiredFields(['uid', 'email', 'role']) &&
+             data.uid == request.auth.uid &&
+             isValidEmail(data.email) &&
+             data.role in ['user', 'admin'];
+    }
+
+    function isValidStream(data) {
+      return hasRequiredFields(['userId', 'status', 'platform']) &&
+             data.userId == request.auth.uid &&
+             data.status in ['live', 'ended'] &&
+             data.platform in ['facebook', 'youtube', 'custom'] &&
+             (!('title' in data) || (data.title is string && data.title.size() <= 100));
+    }
+
+    function isValidChatMessage(data) {
+      return hasRequiredFields(['userId', 'message', 'streamId', 'timestamp']) &&
+             data.userId == request.auth.uid &&
+             data.message is string && data.message.size() <= 500;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && 
+                      ((isOwner(userId) && request.resource.data.role == 'user') || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && 
+                      ((isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin());
+    }
+
+    // Streams
+    match /streams/{streamId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidStream(request.resource.data);
+      allow update: if isAuthenticated() && isValidStream(request.resource.data) && 
+                      (isOwner(resource.data.userId) || isAdmin());
+      allow delete: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+      
+      // Chat subcollection
+      match /chat/{messageId} {
+        allow read: if true;
+        allow create: if isAuthenticated() && isValidChatMessage(request.resource.data);
+        allow delete: if isAdmin();
+      }
+    }
+
+    // Overlays
+    match /users/{userId}/overlays/{overlayId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) || isAdmin();
+    }
+  }
+}

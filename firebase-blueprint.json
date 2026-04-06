@@ -1,0 +1,103 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "bio": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "streamKeys": {
+          "type": "object",
+          "properties": {
+            "facebook": { "type": "string" },
+            "youtube": { "type": "string" },
+            "custom": { "type": "string" }
+          }
+        }
+      },
+      "required": ["uid", "email"]
+    },
+    "Stream": {
+      "title": "Stream",
+      "description": "Livestream session data",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["live", "ended"] },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "viewerCount": { "type": "integer" },
+        "rtmpUrl": { "type": "string" },
+        "streamKey": { "type": "string" },
+        "platform": { "type": "string", "enum": ["facebook", "youtube", "custom"] }
+      },
+      "required": ["userId", "status", "startTime"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Real-time chat message",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "streamId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["streamId", "userId", "message", "timestamp"]
+    },
+    "Overlay": {
+      "title": "Overlay",
+      "description": "Stream overlay configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "image", "alert"] },
+        "content": { "type": "string" },
+        "position": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" }
+          }
+        },
+        "size": {
+          "type": "object",
+          "properties": {
+            "width": { "type": "number" },
+            "height": { "type": "number" }
+          }
+        }
+      },
+      "required": ["userId", "type"]
+    }
+  },
+  "firestore": {
+    "users/{uid}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "streams/{streamId}": {
+      "schema": { "$ref": "#/entities/Stream" },
+      "description": "Livestream sessions"
+    },
+    "streams/{streamId}/chat/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Stream chat messages"
+    },
+    "users/{uid}/overlays/{overlayId}": {
+      "schema": { "$ref": "#/entities/Overlay" },
+      "description": "User stream overlays"
+    }
+  }
+}

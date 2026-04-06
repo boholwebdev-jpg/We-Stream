@@ -1,0 +1,5 @@
+{
+  "name": "WE STREAM",
+  "description": "Professional Android native livestreaming application with real-time RTMP support, overlays, and chat.",
+  "requestFramePermissions": ["camera", "microphone"]
+}
